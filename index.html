@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SIP Calculator Pro — Mutual Fund</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060d1a;
+  --surface:#0d1626;
+  --surface2:#121f35;
+  --surface3:#172440;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.1);
+  --green:#00f5a0;
+  --green2:#00c97f;
+  --blue:#38bdf8;
+  --gold:#fbbf24;
+  --red:#f87171;
+  --text:#e2eaf8;
+  --muted:#5a7090;
+  --muted2:#8ba3c0;
+  --font-head:'Clash Display',sans-serif;
+  --font-body:'Cabinet Grotesk',sans-serif;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 8px 40px rgba(0,0,0,0.5);
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ═══════════════════════════════════════════
+   BACKGROUND EFFECTS
+═══════════════════════════════════════════ */
+.bg-fx{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  overflow:hidden;
+}
+.bg-fx::before{
+  content:'';position:absolute;
+  top:-20%;left:-10%;
+  width:70%;height:70%;
+  background:radial-gradient(ellipse,rgba(0,245,160,0.055) 0%,transparent 65%);
+  animation:drift1 18s ease-in-out infinite alternate;
+}
+.bg-fx::after{
+  content:'';position:absolute;
+  bottom:-20%;right:-10%;
+  width:60%;height:60%;
+  background:radial-gradient(ellipse,rgba(56,189,248,0.05) 0%,transparent 65%);
+  animation:drift2 22s ease-in-out infinite alternate;
+}
+/* subtle grid overlay */
+.bg-grid{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+@keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(5%,8%) scale(1.1)}}
+@keyframes drift2{from{transform:translate(0,0) scale(1)}to{transform:translate(-4%,-6%) scale(1.08)}}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:40px 20px 80px}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.hero{
+  text-align:center;
+  margin-bottom:52px;
+  opacity:0;animation:slideUp .7s .1s ease forwards;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,245,160,0.08);
+  border:1px solid rgba(0,245,160,0.2);
+  color:var(--green);
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:5px 14px;border-radius:30px;
+  margin-bottom:20px;
+}
+.hero-badge span{width:6px;height:6px;background:var(--green);border-radius:50%;display:inline-block;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.hero h1{
+  font-family:var(--font-head);
+  font-size:clamp(2.4rem,6vw,4rem);
+  font-weight:700;
+  letter-spacing:-.04em;
+  line-height:1.05;
+  background:linear-gradient(135deg,#e2eaf8 30%,var(--green) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero p{margin-top:12px;color:var(--muted2);font-size:15px}
+
+/* ═══════════════════════════════════════════
+   MAIN CALCULATOR CARD
+═══════════════════════════════════════════ */
+.calc-shell{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  opacity:0;animation:slideUp .7s .25s ease forwards;
+}
+
+.calc-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+@media(max-width:680px){.calc-body{grid-template-columns:1fr}}
+
+/* ─── LEFT PANEL ─── */
+.panel-left{
+  padding:32px;
+  border-right:1px solid var(--border);
+}
+@media(max-width:680px){.panel-left{border-right:none;border-bottom:1px solid var(--border)}}
+
+.panel-title{
+  font-family:var(--font-head);
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:28px;
+}
+
+/* Sliders */
+.field{margin-bottom:28px}
+.field:last-child{margin-bottom:0}
+
+.field-top{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:12px;
+}
+.field-label{font-size:13px;color:var(--muted2);font-weight:500}
+.field-value{
+  font-family:var(--font-head);
+  font-size:18px;font-weight:600;
+  color:var(--green);
+  transition:all .2s;
+}
+
+.range-wrap{position:relative}
+input[type=range]{
+  -webkit-appearance:none;
+  width:100%;height:6px;
+  border-radius:6px;
+  outline:none;cursor:pointer;
+  background:var(--surface3);
+  transition:background .2s;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:22px;height:22px;
+  background:var(--bg);
+  border:2.5px solid var(--green);
+  border-radius:50%;
+  box-shadow:0 0 0 4px rgba(0,245,160,0.15),0 4px 16px rgba(0,0,0,.4);
+  transition:transform .15s,box-shadow .15s;
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb:hover{
+  transform:scale(1.2);
+  box-shadow:0 0 0 6px rgba(0,245,160,0.2),0 4px 16px rgba(0,0,0,.4);
+}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;
+  background:var(--bg);
+  border:2.5px solid var(--green);
+  border-radius:50%;cursor:pointer;
+}
+
+.range-ticks{display:flex;justify-content:space-between;margin-top:6px}
+.range-ticks span{font-size:10px;color:var(--muted)}
+
+/* ─── RIGHT PANEL ─── */
+.panel-right{padding:32px;display:flex;flex-direction:column;gap:20px}
+
+/* Stat boxes */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:400px){.stats-row{grid-template-columns:1fr}}
+
+.stat-box{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:14px 12px;
+  text-align:center;
+  transition:transform .2s,border-color .2s;
+}
+.stat-box:hover{transform:translateY(-2px);border-color:var(--border2)}
+.stat-box .s-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.stat-box .s-val{
+  font-family:var(--font-head);
+  font-size:clamp(1rem,2.5vw,1.35rem);
+  font-weight:600;
+  transition:all .25s;
+}
+.stat-box.invested .s-val{color:var(--text)}
+.stat-box.returns  .s-val{color:var(--blue)}
+.stat-box.total    .s-val{color:var(--green)}
+
+/* Donut */
+.donut-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.donut-svg-wrap{
+  position:relative;
+  width:140px;height:140px;flex-shrink:0;
+}
+.donut-svg-wrap svg{transform:rotate(-90deg)}
+.donut-label{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+}
+.donut-label .dl-rate{
+  font-family:var(--font-head);
+  font-size:1.5rem;font-weight:700;color:var(--green);
+}
+.donut-label .dl-text{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+
+.donut-legend{flex:1;min-width:120px}
+.dl-item{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dl-item:last-child{margin-bottom:0}
+.dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.dl-info .dl-name{font-size:11px;color:var(--muted);letter-spacing:.5px}
+.dl-info .dl-num{
+  font-family:var(--font-head);
+  font-size:13px;font-weight:600;
+  transition:all .25s;
+}
+
+/* ═══════════════════════════════════════════
+   TABS + BREAKDOWN
+═══════════════════════════════════════════ */
+.breakdown-shell{
+  margin-top:20px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  opacity:0;animation:slideUp .7s .4s ease forwards;
+}
+
+.tabs{
+  display:flex;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.tab-btn{
+  flex:1;padding:14px;
+  font-family:var(--font-body);font-size:12px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);
+  background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all .2s;
+}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);background:var(--surface)}
+.tab-btn:hover:not(.active){color:var(--muted2)}
+
+.tab-pane{display:none;padding:28px}
+.tab-pane.active{display:block}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  text-align:left;padding:10px 14px;
+  font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);
+  background:var(--surface2);
+  border-bottom:1px solid var(--border2);
+  position:sticky;top:0;
+}
+thead th:not(:first-child){text-align:right}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,0.025)}
+tbody td{
+  padding:11px 14px;
+  border-bottom:1px solid var(--border);
+  font-variant-numeric:tabular-nums;
+}
+tbody td:not(:first-child){text-align:right}
+tbody td.yr{color:var(--muted2);font-size:12px}
+tbody td.inv-val{color:var(--text)}
+tbody td.ret-val{color:var(--blue)}
+tbody td.tot-val{color:var(--green);font-weight:600}
+tbody td.grw{
+  font-weight:600;
+}
+tbody tr:last-child td{border-bottom:none}
+
+/* Bar chart tab */
+.bar-chart{display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:4px}
+.bar-row{display:grid;grid-template-columns:60px 1fr 90px;align-items:center;gap:12px}
+.bar-row .yr-lbl{font-size:12px;color:var(--muted2);text-align:right}
+.bar-track{height:28px;background:var(--surface2);border-radius:6px;overflow:hidden;position:relative}
+.bar-inv{
+  height:100%;background:linear-gradient(90deg,rgba(226,234,248,.25),rgba(226,234,248,.12));
+  transition:width .6s ease;
+}
+.bar-ret{
+  position:absolute;top:0;height:100%;
+  background:linear-gradient(90deg,rgba(56,189,248,.5),rgba(0,245,160,.5));
+  transition:width .6s ease;
+}
+.bar-row .bar-amt{
+  font-family:var(--font-head);font-size:12px;
+  font-weight:600;color:var(--green);text-align:right;
+}
+
+/* SIP vs Lumpsum tab */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:480px){.compare-grid{grid-template-columns:1fr}}
+.cmp-card{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  transition:border-color .2s;
+}
+.cmp-card.winner{border-color:rgba(0,245,160,.35);background:rgba(0,245,160,.04)}
+.cmp-card h4{
+  font-family:var(--font-head);font-size:13px;font-weight:600;
+  margin-bottom:4px;
+}
+.cmp-card .cmp-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.cmp-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cmp-stat .cs-label{font-size:12px;color:var(--muted2)}
+.cmp-stat .cs-val{
+  font-family:var(--font-head);font-weight:600;font-size:14px;
+}
+.winner-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(0,245,160,.15);color:var(--green);
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;margin-top:8px;
+}
+
+/* ═══════════════════════════════════════════
+   ZERODHA CTA
+═══════════════════════════════════════════ */
+.z-cta{
+  margin-top:20px;
+  background:linear-gradient(135deg,#0f1c30 0%,#0a1422 100%);
+  border:1px solid rgba(251,191,36,.18);
+  border-radius:24px;
+  padding:32px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:24px;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 60px rgba(0,0,0,.5);
+  opacity:0;animation:slideUp .7s .55s ease forwards;
+}
+.z-cta::before{
+  content:'';position:absolute;
+  top:-60px;right:-60px;
+  width:260px;height:260px;
+  background:radial-gradient(circle,rgba(251,191,36,.07),transparent 65%);
+  pointer-events:none;
+}
+.z-cta::after{
+  content:'Z';
+  position:absolute;
+  right:32px;top:50%;transform:translateY(-50%);
+  font-family:var(--font-head);font-size:10rem;font-weight:700;
+  color:rgba(251,191,36,.04);line-height:1;
+  pointer-events:none;
+  user-select:none;
+}
+
+.z-left{flex:1;min-width:220px;position:relative;z-index:1}
+.z-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:10px;
+}
+.z-tag::before{
+  content:'';width:16px;height:2px;background:var(--gold);border-radius:2px;
+}
+.z-left h2{
+  font-family:var(--font-head);font-size:clamp(1.3rem,3vw,1.8rem);
+  font-weight:700;line-height:1.2;margin-bottom:8px;
+}
+.z-left p{font-size:13px;color:var(--muted2);line-height:1.6;max-width:380px}
+
+.z-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.z-chip{
+  font-size:11px;font-weight:600;
+  background:rgba(251,191,36,.07);
+  color:var(--gold);
+  border:1px solid rgba(251,191,36,.18);
+  padding:4px 12px;border-radius:20px;
+}
+
+.z-right{position:relative;z-index:1}
+.z-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,var(--gold),#f59e0b);
+  color:#0a0a0a;
+  font-family:var(--font-head);font-weight:700;font-size:14px;
+  letter-spacing:.5px;
+  padding:16px 28px;border-radius:var(--radius-sm);
+  text-decoration:none;
+  box-shadow:0 4px 24px rgba(251,191,36,.35);
+  transition:transform .2s,box-shadow .2s,filter .2s;
+  white-space:nowrap;
+}
+.z-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 40px rgba(251,191,36,.5);
+  filter:brightness(1.08);
+}
+.z-btn svg{width:16px;height:16px;flex-shrink:0}
+.z-note{font-size:11px;color:var(--muted);text-align:center;margin-top:8px}
+
+/* ═══════════════════════════════════════════
+   DISCLAIMER + FOOTER
+═══════════════════════════════════════════ */
+.disclaimer{
+  margin-top:24px;
+  background:rgba(248,113,113,.05);
+  border:1px solid rgba(248,113,113,.15);
+  border-radius:var(--radius-sm);
+  padding:14px 18px;
+  font-size:12px;color:rgba(248,113,113,.7);
+  opacity:0;animation:slideUp .7s .65s ease forwards;
+}
+.disclaimer strong{color:rgba(248,113,113,.9)}
+
+footer{
+  text-align:center;margin-top:28px;
+  font-size:12px;color:var(--muted);
+  opacity:0;animation:slideUp .7s .7s ease forwards;
+}
+footer a{color:var(--green);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- Background FX -->
+<div class="bg-fx"></div>
+<div class="bg-grid"></div>
+
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="hero-badge"><span></span>Live Calculator</div>
+    <h1>SIP Calculator</h1>
+    <p>Mutual Fund mein SIP ke through apna future corpus calculate karein</p>
+  </div>
+
+  <!-- ── MAIN CALCULATOR ── -->
+  <div class="calc-shell">
+    <div class="calc-body">
+
+      <!-- LEFT: INPUTS -->
+      <div class="panel-left">
+        <div class="panel-title">⚙ Investment Parameters</div>
+
+        <div class="field">
+          <div class="field-top">
+            <span class="field-label">Monthly SIP Amount</span>
+            <span class="field-value" id="lbl-sip">₹5,000</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="r-sip" min="500" max="100000" step="500" value="5000"/>
+          </div>
+          <div class="range-ticks"><span>₹500</span><span>₹50K</span><span>₹1 Lac</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <span class="field-label">Expected Annual Return</span>
+            <span class="field-value" id="lbl-rate">12%</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="r-rate" min="1" max="30" step="0.5" value="12"/>
+          </div>
+          <div class="range-ticks"><span>1%</span><span>15%</span><span>30%</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top">
+            <span class="field-label">Investment Duration</span>
+            <span class="field-value" id="lbl-yrs">10 Years</span>
+          </div>
+          <div class="range-wrap">
+            <input type="range" id="r-yrs" min="1" max="40" step="1" value="10"/>
+          </div>
+          <div class="range-ticks"><span>1 Yr</span><span>20 Yrs</span><span>40 Yrs</span></div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: RESULTS -->
+      <div class="panel-right">
+
+        <div class="stats-row">
+          <div class="stat-box invested">
+            <div class="s-label">Invested</div>
+            <div class="s-val" id="s-inv">₹6.00 L</div>
+          </div>
+          <div class="stat-box returns">
+            <div class="s-label">Returns</div>
+            <div class="s-val" id="s-ret">₹5.16 L</div>
+          </div>
+          <div class="stat-box total">
+            <div class="s-label">Total Corpus</div>
+            <div class="s-val" id="s-tot">₹11.16 L</div>
+          </div>
+        </div>
+
+        <!-- Donut chart -->
+        <div class="donut-row">
+          <div class="donut-svg-wrap">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="52" fill="none" stroke="#172440" stroke-width="20"/>
+              <circle id="d-inv" cx="70" cy="70" r="52" fill="none"
+                stroke="rgba(226,234,248,0.5)" stroke-width="20"
+                stroke-dasharray="326.7" stroke-dashoffset="0"
+                stroke-linecap="butt"/>
+              <circle id="d-ret" cx="70" cy="70" r="52" fill="none"
+                stroke="url(#grad1)" stroke-width="20"
+                stroke-dasharray="0 326.7"
+                stroke-linecap="butt"/>
+              <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="100%" stop-color="#00f5a0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="donut-label">
+              <span class="dl-rate" id="d-rate">12%</span>
+              <span class="dl-text">p.a.</span>
+            </div>
+          </div>
+
+          <div class="donut-legend">
+            <div class="dl-item">
+              <div class="dl-dot" style="background:rgba(226,234,248,.5)"></div>
+              <div class="dl-info">
+                <div class="dl-name">Amount Invested</div>
+                <div class="dl-num" id="dl-inv">₹6.00 L</div>
+              </div>
+            </div>
+            <div class="dl-item">
+              <div class="dl-dot" style="background:linear-gradient(90deg,#38bdf8,#00f5a0)"></div>
+              <div class="dl-info">
+                <div class="dl-name">Est. Returns</div>
+                <div class="dl-num" style="color:var(--blue)" id="dl-ret">₹5.16 L</div>
+              </div>
+            </div>
+            <div class="dl-item">
+              <div class="dl-dot" style="background:var(--green)"></div>
+              <div class="dl-info">
+                <div class="dl-name">Total Value</div>
+                <div class="dl-num" style="color:var(--green)" id="dl-tot">₹11.16 L</div>
+              </div>
+            </div>
+            <div class="dl-item" style="margin-top:6px">
+              <div class="dl-dot" style="background:var(--gold)"></div>
+              <div class="dl-info">
+                <div class="dl-name">Wealth Gained</div>
+                <div class="dl-num" style="color:var(--gold)" id="dl-wlth">+85.9%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BREAKDOWN TABS ── -->
+  <div class="breakdown-shell">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('table',this)">📋 Year Table</button>
+      <button class="tab-btn" onclick="switchTab('bars',this)">📊 Bar View</button>
+      <button class="tab-btn" onclick="switchTab('compare',this)">⚖ SIP vs Lumpsum</button>
+    </div>
+
+    <!-- TABLE TAB -->
+    <div class="tab-pane active" id="tab-table">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Invested (₹)</th>
+              <th>Returns (₹)</th>
+              <th>Total Value (₹)</th>
+              <th>Growth %</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BAR TAB -->
+    <div class="tab-pane" id="tab-bars">
+      <div class="bar-chart" id="bar-chart"></div>
+    </div>
+
+    <!-- COMPARE TAB -->
+    <div class="tab-pane" id="tab-compare">
+      <div class="compare-grid">
+        <div class="cmp-card" id="cmp-sip">
+          <h4>📅 SIP Investment</h4>
+          <div class="cmp-sub">Monthly fixed amount invest karo</div>
+          <div class="cmp-stat"><span class="cs-label">Monthly</span><span class="cs-val" id="cmp-monthly">₹5,000</span></div>
+          <div class="cmp-stat"><span class="cs-label">Total Invested</span><span class="cs-val" id="cmp-sinv">₹6.00 L</span></div>
+          <div class="cmp-stat"><span class="cs-label">Final Corpus</span><span class="cs-val" style="color:var(--green)" id="cmp-stot">₹11.16 L</span></div>
+          <div class="cmp-stat"><span class="cs-label">Returns</span><span class="cs-val" style="color:var(--blue)" id="cmp-sret">₹5.16 L</span></div>
+        </div>
+        <div class="cmp-card" id="cmp-ls">
+          <h4>💰 Lumpsum Investment</h4>
+          <div class="cmp-sub">Ek baar mein poora invest karo</div>
+          <div class="cmp-stat"><span class="cs-label">One-time</span><span class="cs-val" id="cmp-lsinv">₹6.00 L</span></div>
+          <div class="cmp-stat"><span class="cs-label">Total Invested</span><span class="cs-val" id="cmp-lsinv2">₹6.00 L</span></div>
+          <div class="cmp-stat"><span class="cs-label">Final Corpus</span><span class="cs-val" style="color:var(--green)" id="cmp-lstot">₹18.58 L</span></div>
+          <div class="cmp-stat"><span class="cs-label">Returns</span><span class="cs-val" style="color:var(--blue)" id="cmp-lsret">₹12.58 L</span></div>
+        </div>
+      </div>
+      <p id="cmp-verdict" style="margin-top:16px;font-size:13px;color:var(--muted2);text-align:center;"></p>
+    </div>
+  </div>
+
+  <!-- ── ZERODHA CTA ── -->
+  <div class="z-cta">
+    <div class="z-left">
+      <div class="z-tag">Trusted Partner</div>
+      <h2>Zerodha pe SIP<br/>shuru karein aaj!</h2>
+      <p>India ka #1 discount broker. Direct mutual funds mein invest karo — zero commission ke saath. 1.5 crore+ investors ki pasand.</p>
+      <div class="z-chips">
+        <span class="z-chip">✓ Free Account</span>
+        <span class="z-chip">✓ Zero Commission</span>
+        <span class="z-chip">✓ Direct MF</span>
+        <span class="z-chip">✓ Coin App</span>
+        <span class="z-chip">✓ 5000+ Funds</span>
+      </div>
+    </div>
+    <div class="z-right">
+      <a class="z-btn" href="https://zerodha.com/open-account?c=RRA920" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Free Account Kholein
+      </a>
+      <div class="z-note">Referral Code: RRA920</div>
+    </div>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer">
+    <strong>⚠ Disclaimer:</strong> Yeh calculator sirf educational aur estimation purpose ke liye hai. Actual returns market conditions ke anusar alag ho sakte hain. Mutual Fund investments are subject to market risks. Please read all scheme related documents carefully before investing. Past performance is not indicative of future results.
+  </div>
+
+  <footer>
+    Built with ❤ for Indian investors &nbsp;·&nbsp;
+    <a href="https://zerodha.com/open-account?c=RRA920" target="_blank">Zerodha pe invest karein</a>
+    &nbsp;·&nbsp; Referral: RRA920
+  </footer>
+
+</div><!-- /page -->
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT — ALL LOGIC
+═══════════════════════════════════════════ -->
+<script>
+// ── DOM refs ──
+const rSip   = document.getElementById('r-sip');
+const rRate  = document.getElementById('r-rate');
+const rYrs   = document.getElementById('r-yrs');
+
+const lblSip = document.getElementById('lbl-sip');
+const lblRate= document.getElementById('lbl-rate');
+const lblYrs = document.getElementById('lbl-yrs');
+
+const sInv   = document.getElementById('s-inv');
+const sRet   = document.getElementById('s-ret');
+const sTot   = document.getElementById('s-tot');
+const dlInv  = document.getElementById('dl-inv');
+const dlRet  = document.getElementById('dl-ret');
+const dlTot  = document.getElementById('dl-tot');
+const dlWlth = document.getElementById('dl-wlth');
+const dRate  = document.getElementById('d-rate');
+const dInvC  = document.getElementById('d-inv');
+const dRetC  = document.getElementById('d-ret');
+const tblBody= document.getElementById('tbl-body');
+const barChrt= document.getElementById('bar-chart');
+
+const CIRC   = 2 * Math.PI * 52; // ~326.7
+
+// ── Format numbers ──
+function fmt(n){
+  if(n>=1e7) return '₹'+(n/1e7).toFixed(2)+' Cr';
+  if(n>=1e5) return '₹'+(n/1e5).toFixed(2)+' L';
+  if(n>=1000)return '₹'+(n/1000).toFixed(1)+' K';
+  return '₹'+Math.round(n).toLocaleString('en-IN');
+}
+function fmtTbl(n){ return '₹'+Math.round(n).toLocaleString('en-IN'); }
+function fmtPct(n){ return (n>=0?'+':'')+n.toFixed(1)+'%'; }
+
+// ── SIP formula ──
+function calcSIP(monthly, annualRate, months){
+  const r = annualRate/12/100;
+  if(r===0) return monthly * months;
+  return monthly * ((Math.pow(1+r,months)-1)/r)*(1+r);
+}
+// Lumpsum FV
+function calcLS(principal, annualRate, years){
+  return principal * Math.pow(1+annualRate/100, years);
+}
+
+// ── Slider track fill ──
+function trackFill(el){
+  const pct = (el.value - el.min)/(el.max - el.min)*100;
+  el.style.background = `linear-gradient(to right,var(--green) ${pct}%,var(--surface3) ${pct}%)`;
+}
+
+// ── Main calculate ──
+function calculate(){
+  const sip   = +rSip.value;
+  const rate  = +rRate.value;
+  const yrs   = +rYrs.value;
+  const months= yrs*12;
+
+  // Labels
+  lblSip.textContent  = '₹'+sip.toLocaleString('en-IN');
+  lblRate.textContent = rate+'%';
+  lblYrs.textContent  = yrs+(yrs===1?' Year':' Years');
+
+  // Tracks
+  trackFill(rSip); trackFill(rRate); trackFill(rYrs);
+
+  // Core calcs
+  const totalInv = sip*months;
+  const totalVal = calcSIP(sip,rate,months);
+  const totalRet = totalVal-totalInv;
+  const wealthPct= (totalRet/totalInv*100);
+
+  // Stats
+  sInv.textContent = fmt(totalInv);
+  sRet.textContent = fmt(totalRet);
+  sTot.textContent = fmt(totalVal);
+  dlInv.textContent= fmt(totalInv);
+  dlRet.textContent= fmt(totalRet);
+  dlTot.textContent= fmt(totalVal);
+  dlWlth.textContent= fmtPct(wealthPct);
+  dRate.textContent = rate+'%';
+
+  // Donut
+  const invFrac = totalInv/totalVal;
+  const retFrac = totalRet/totalVal;
+  const invDash = invFrac*CIRC;
+  const retDash = retFrac*CIRC;
+  dInvC.setAttribute('stroke-dasharray', `${invDash} ${CIRC}`);
+  dInvC.setAttribute('stroke-dashoffset','0');
+  dRetC.setAttribute('stroke-dasharray', `${retDash} ${CIRC}`);
+  dRetC.setAttribute('stroke-dashoffset', `${-invDash}`);
+
+  // Year table
+  buildTable(sip, rate, yrs);
+  buildBars(sip, rate, yrs);
+  buildCompare(sip, rate, yrs, totalInv, totalVal, totalRet);
+}
+
+// ── Year table ──
+function buildTable(sip, rate, yrs){
+  let rows='';
+  for(let y=1;y<=yrs;y++){
+    const inv = sip*y*12;
+    const val = calcSIP(sip,rate,y*12);
+    const ret = val-inv;
+    const grw = (ret/inv*100);
+    const grwColor = grw>=0?'color:var(--green)':'color:var(--red)';
+    rows+=`<tr>
+      <td class="yr">${y} Yr${y>1?'s':''}</td>
+      <td class="inv-val">${fmtTbl(inv)}</td>
+      <td class="ret-val">${fmtTbl(ret)}</td>
+      <td class="tot-val">${fmtTbl(val)}</td>
+      <td class="grw" style="${grwColor}">${fmtPct(grw)}</td>
+    </tr>`;
+  }
+  tblBody.innerHTML = rows;
+}
+
+// ── Bar chart ──
+function buildBars(sip, rate, yrs){
+  const maxVal = calcSIP(sip,rate,yrs*12);
+  let html='';
+  for(let y=1;y<=yrs;y++){
+    const inv = sip*y*12;
+    const val = calcSIP(sip,rate,y*12);
+    const invW = (inv/maxVal*100).toFixed(1);
+    const retW = ((val-inv)/maxVal*100).toFixed(1);
+    html+=`<div class="bar-row">
+      <span class="yr-lbl">Yr ${y}</span>
+      <div class="bar-track">
+        <div class="bar-inv" style="width:${invW}%"></div>
+        <div class="bar-ret" style="width:${(+invW + +retW)}%;left:0"></div>
+      </div>
+      <span class="bar-amt">${fmt(val)}</span>
+    </div>`;
+  }
+  barChrt.innerHTML = html;
+}
+
+// ── Compare SIP vs Lumpsum ──
+function buildCompare(sip, rate, yrs, totalInv, sipTotal, sipRet){
+  const ls     = calcLS(totalInv, rate, yrs);
+  const lsRet  = ls - totalInv;
+
+  document.getElementById('cmp-monthly').textContent = '₹'+sip.toLocaleString('en-IN');
+  document.getElementById('cmp-sinv').textContent    = fmt(totalInv);
+  document.getElementById('cmp-stot').textContent    = fmt(sipTotal);
+  document.getElementById('cmp-sret').textContent    = fmt(sipRet);
+
+  document.getElementById('cmp-lsinv').textContent   = fmt(totalInv);
+  document.getElementById('cmp-lsinv2').textContent  = fmt(totalInv);
+  document.getElementById('cmp-lstot').textContent   = fmt(ls);
+  document.getElementById('cmp-lsret').textContent   = fmt(lsRet);
+
+  const sipCard = document.getElementById('cmp-sip');
+  const lsCard  = document.getElementById('cmp-ls');
+
+  // Remove old badges
+  sipCard.querySelectorAll('.winner-badge').forEach(e=>e.remove());
+  lsCard.querySelectorAll('.winner-badge').forEach(e=>e.remove());
+  sipCard.classList.remove('winner');
+  lsCard.classList.remove('winner');
+
+  let verdict='';
+  if(ls > sipTotal){
+    lsCard.classList.add('winner');
+    const b=document.createElement('div');
+    b.className='winner-badge';b.textContent='🏆 Higher Corpus';
+    lsCard.appendChild(b);
+    const diff=ls-sipTotal;
+    verdict=`Lumpsum se <strong style="color:var(--green)">${fmt(diff)}</strong> zyada milega — lekin SIP mein risk spread hota hai aur har mahine invest karna hota hai.`;
+  } else {
+    sipCard.classList.add('winner');
+    const b=document.createElement('div');
+    b.className='winner-badge';b.textContent='🏆 Higher Corpus';
+    sipCard.appendChild(b);
+    const diff=sipTotal-ls;
+    verdict=`SIP se <strong style="color:var(--green)">${fmt(diff)}</strong> zyada milega — Rupee Cost Averaging ka fayda!`;
+  }
+  document.getElementById('cmp-verdict').innerHTML=verdict;
+}
+
+// ── Tab switch ──
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Event listeners ──
+[rSip,rRate,rYrs].forEach(el=>el.addEventListener('input',calculate));
+
+// ── Init ──
+calculate();
+</script>
+</body>
+</html>
